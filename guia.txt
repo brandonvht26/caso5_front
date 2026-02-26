@@ -1,0 +1,53 @@
+Paso a paso para el desarrollo del examen:
+
+1. Analizar el caso de estudio
+2. Definir los avances (para los commits en GitHub)
+3. Subir el proyecto vacío a GitHub
+4. Ejecutar comandos inicializadores (técnicamente esto es el segundo Commit)
+
+npm create vite@latest frontend-renta-carros -- --template React
+cd frontend-eventos
+npm install axios react-router-dom react-hook-form sweetalert2
+
+5. Instalación de Tailwind (tercer Commit)
+
+npm install -D @tailwindcss/postcss
+
+- Generar postcss.config.js
+export default {
+    plugins: {
+        "@tailwindcss/postcss": {},
+    },
+}
+
+- Modificar index.css
+@import "tailwindcss";
+
+- Inicializar el servidor
+npm run dev
+
+6. Conexiones base (cuarto Commit)
+
+- Generar el archivo de variables de entorno
+VITE_BACKEND_URL=https://c5-practice.onrender.com
+
+- Config
+- Conext
+
+7. Primeros Dashboard (quinto Commit)
+- Login
+- Layout
+
+8. Módulo de Auditorios (sexto Commit)
+- Pacientes.jsx
+- FormularioPaciente.jsx
+
+9. Módulo de Conferencistas (séptimo Commit)
+- Conferencistas.jsx
+- FormularioConferencista.jsx
+
+10. Módulo de Reservas (octavo Commit)
+- Reservas.jsx
+- FormularioReserva.jsx
+
+11. Unificación de repositorios, readme y despliegue
