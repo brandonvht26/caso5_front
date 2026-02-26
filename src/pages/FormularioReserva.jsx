@@ -4,43 +4,33 @@ import clienteAxios from '../config/axios'
 import Swal from 'sweetalert2'
 
 const FormularioReserva = () => {
-    // 1. Estado basado en el modelo de Reserva
     const [reserva, setReserva] = useState({
-        codigo: '',
-        descripcion: '',
-        conferencista: '',
-        auditorio: ''
+        codigo: '', descripcion: '', conferencista: '', auditorio: ''
     })
-
-    // 2. Listas para los selects (poblar desde la API)
     const [conferencistas, setConferencistas] = useState([])
     const [auditorios, setAuditorios] = useState([])
-
     const navigate = useNavigate()
     const { id } = useParams()
 
     useEffect(() => {
-        // Cargar conferencistas y auditorios para los selects
         const cargarDependencias = async () => {
             try {
-                const [resConferencistas, resAuditorios] = await Promise.all([
+                const [resC, resA] = await Promise.all([
                     clienteAxios.get('/conferencistas'),
                     clienteAxios.get('/auditorios')
                 ])
-                setConferencistas(resConferencistas.data)
-                setAuditorios(resAuditorios.data)
+                setConferencistas(resC.data)
+                setAuditorios(resA.data)
             } catch (error) {
                 Swal.fire('Error', 'No se pudieron cargar los datos necesarios', 'error')
             }
         }
         cargarDependencias()
 
-        // Si hay id, cargar los datos de la reserva existente
         if (id) {
             const obtenerReserva = async () => {
                 try {
                     const { data } = await clienteAxios.get(`/reserva/${id}`)
-                    // El populate devuelve objetos, necesitamos solo los IDs para los selects
                     setReserva({
                         codigo: data.codigo,
                         descripcion: data.descripcion,
@@ -56,28 +46,19 @@ const FormularioReserva = () => {
         }
     }, [id])
 
-    const handleChange = (e) => {
-        setReserva({
-            ...reserva,
-            [e.target.name]: e.target.value
-        })
-    }
+    const handleChange = (e) => setReserva({ ...reserva, [e.target.name]: e.target.value })
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-
         if (Object.values(reserva).includes('')) {
             Swal.fire('Atención', 'Todos los campos son obligatorios', 'warning')
             return
         }
-
         try {
             if (id) {
-                // Actualizar Reserva (PUT)
                 await clienteAxios.put(`/reserva/${id}`, reserva)
                 Swal.fire('¡Actualizada!', 'La reserva se actualizó correctamente', 'success')
             } else {
-                // Crear Reserva (POST)
                 await clienteAxios.post('/reservas', reserva)
                 Swal.fire('¡Registrada!', 'La reserva ha sido creada exitosamente', 'success')
             }
@@ -87,112 +68,187 @@ const FormularioReserva = () => {
         }
     }
 
+    const ponenteSeleccionado = conferencistas.find(c => c._id === reserva.conferencista)
+    const salonSeleccionado   = auditorios.find(a => a._id === reserva.auditorio)
+
     return (
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-3xl mx-auto mt-5 border-t-8 border-violet-600">
-            <h1 className="text-3xl font-black text-gray-800 mb-6 border-b-2 border-gray-100 pb-4">
-                {id ? 'Editar Reserva' : 'Registrar Nueva Reserva'}
-            </h1>
+        <>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+                .fres-page { font-family: 'DM Sans', sans-serif; }
+                .fres-card {
+                    background: #fff; border-radius: 20px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+                    max-width: 760px; margin: 0 auto; overflow: hidden;
+                }
+                .fres-header {
+                    background: linear-gradient(135deg, #1C1410 0%, #2E2010 100%);
+                    padding: 1.75rem 2rem; border-bottom: 3px solid #F59E0B;
+                }
+                .fres-header p {
+                    font-size: 0.7rem; font-weight: 700; letter-spacing: 2.5px;
+                    text-transform: uppercase; color: #F59E0B; margin-bottom: 0.3rem;
+                }
+                .fres-header h1 {
+                    font-family: 'Playfair Display', serif;
+                    font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 700; color: #fff;
+                }
+                .fres-body { padding: 2rem; display: flex; flex-direction: column; gap: 1.25rem; }
+                .fres-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+                .fr-label {
+                    display: block; font-size: 0.72rem; font-weight: 700;
+                    letter-spacing: 1.5px; text-transform: uppercase;
+                    color: #6B7280; margin-bottom: 0.4rem;
+                }
+                .fr-label.accent { color: #EA580C; }
+                .fr-input, .fr-select {
+                    width: 100%; padding: 0.8rem 1rem;
+                    border: 1.5px solid #E5E7EB; border-radius: 10px;
+                    background: #F9FAFB; color: #111827;
+                    font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+                    outline: none; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+                    box-sizing: border-box;
+                }
+                .fr-input:focus, .fr-select:focus {
+                    border-color: #F59E0B; background: #FFFBEB;
+                    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+                }
+                .fr-input:disabled { background: #F3F4F6; color: #9CA3AF; cursor: not-allowed; }
+                .fr-input.uppercase-i { text-transform: uppercase; }
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+                /* Resumen */
+                .fres-summary {
+                    background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+                    border: 1.5px solid #FDE68A;
+                    border-radius: 12px; padding: 1.25rem;
+                }
+                .fres-summary-title {
+                    font-size: 0.68rem; font-weight: 800; letter-spacing: 2px;
+                    text-transform: uppercase; color: #92400E; margin-bottom: 0.85rem;
+                }
+                .fres-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+                .summary-item-label { font-size: 0.7rem; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px; }
+                .summary-item-name  { font-weight: 700; color: #111827; font-size: 0.9rem; margin-top: 0.1rem; }
+                .summary-item-sub   { font-size: 0.78rem; color: #6B7280; margin-top: 0.1rem; }
 
-                {/* Fila 1: Código y Descripción */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Código de Reserva *</label>
-                        <input
-                            type="text"
-                            name="codigo"
-                            value={reserva.codigo}
-                            onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none uppercase"
-                            placeholder="Ej: RES-001"
-                            disabled={!!id}
-                        />
+                .fres-footer {
+                    display: flex; gap: 1rem; flex-wrap: wrap;
+                    padding: 1.5rem 2rem; background: #F9FAFB; border-top: 1px solid #F3F4F6;
+                }
+                .fr-btn-submit {
+                    flex: 1; min-width: 160px; padding: 0.875rem 1rem;
+                    background: linear-gradient(135deg, #EA580C, #F59E0B);
+                    color: #1C1410; font-family: 'DM Sans', sans-serif;
+                    font-weight: 800; font-size: 0.9rem; border: none;
+                    border-radius: 10px; cursor: pointer;
+                    box-shadow: 0 4px 14px rgba(234,88,12,0.3);
+                    transition: transform 0.15s, box-shadow 0.15s;
+                }
+                .fr-btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(234,88,12,0.4); }
+                .fr-btn-cancel {
+                    flex: 1; min-width: 140px; padding: 0.875rem 1rem;
+                    background: #fff; color: #374151; font-family: 'DM Sans', sans-serif;
+                    font-weight: 700; font-size: 0.9rem; border: 1.5px solid #D1D5DB;
+                    border-radius: 10px; cursor: pointer; transition: background 0.15s;
+                }
+                .fr-btn-cancel:hover { background: #F3F4F6; }
+
+                @media (max-width: 560px) {
+                    .fres-grid-2 { grid-template-columns: 1fr; }
+                    .fres-summary-grid { grid-template-columns: 1fr; }
+                    .fres-body { padding: 1.25rem; }
+                    .fres-footer { padding: 1.25rem; }
+                }
+            `}</style>
+
+            <div className="fres-page">
+                <div className="fres-card">
+                    <div className="fres-header">
+                        <p>{id ? 'Edición' : 'Registro'} · Reservas</p>
+                        <h1>{id ? 'Editar Reserva' : 'Registrar Nueva Reserva'}</h1>
                     </div>
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Descripción del Evento *</label>
-                        <input
-                            type="text"
-                            name="descripcion"
-                            value={reserva.descripcion}
-                            onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none"
-                            placeholder="Ej: Conferencia sobre IA Generativa"
-                        />
-                    </div>
-                </div>
 
-                {/* Fila 2: Select Conferencista */}
-                <div>
-                    <label className="block text-violet-800 font-bold mb-2">Conferencista Asignado *</label>
-                    <select
-                        name="conferencista"
-                        value={reserva.conferencista}
-                        onChange={handleChange}
-                        className="w-full p-3 border border-violet-300 rounded-lg bg-violet-50 focus:ring-2 focus:ring-violet-500 outline-none font-semibold"
-                    >
-                        <option value="">-- Seleccione un conferencista --</option>
-                        {conferencistas.map(ponente => (
-                            <option key={ponente._id} value={ponente._id}>
-                                {ponente.nombre} {ponente.apellido} — {ponente.empresa}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                    <form onSubmit={handleSubmit}>
+                        <div className="fres-body">
 
-                {/* Fila 3: Select Auditorio */}
-                <div>
-                    <label className="block text-violet-800 font-bold mb-2">Auditorio Asignado *</label>
-                    <select
-                        name="auditorio"
-                        value={reserva.auditorio}
-                        onChange={handleChange}
-                        className="w-full p-3 border border-violet-300 rounded-lg bg-violet-50 focus:ring-2 focus:ring-violet-500 outline-none font-semibold"
-                    >
-                        <option value="">-- Seleccione un auditorio --</option>
-                        {auditorios.map(salon => (
-                            <option key={salon._id} value={salon._id}>
-                                {salon.nombre} — {salon.ubicacion} ({salon.capacidad} pax)
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Resumen visual si ambos están seleccionados */}
-                {reserva.conferencista && reserva.auditorio && (() => {
-                    const ponente = conferencistas.find(c => c._id === reserva.conferencista)
-                    const salon = auditorios.find(a => a._id === reserva.auditorio)
-                    return ponente && salon ? (
-                        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 mt-2">
-                            <p className="text-violet-800 font-bold text-sm mb-2 uppercase tracking-wide">Resumen de la Reserva</p>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
+                            {/* Código + Descripción */}
+                            <div className="fres-grid-2">
                                 <div>
-                                    <span className="text-gray-500">Ponente:</span>
-                                    <p className="font-semibold text-gray-800">{ponente.nombre} {ponente.apellido}</p>
-                                    <p className="text-gray-500 text-xs">{ponente.empresa}</p>
+                                    <label className="fr-label">Código de Reserva *</label>
+                                    <input type="text" name="codigo" value={reserva.codigo}
+                                        onChange={handleChange} className="fr-input uppercase-i"
+                                        placeholder="Ej: RES-001" disabled={!!id} />
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Salón:</span>
-                                    <p className="font-semibold text-gray-800">{salon.nombre}</p>
-                                    <p className="text-gray-500 text-xs">{salon.ubicacion} · {salon.capacidad} pax</p>
+                                    <label className="fr-label">Descripción del Evento *</label>
+                                    <input type="text" name="descripcion" value={reserva.descripcion}
+                                        onChange={handleChange} className="fr-input"
+                                        placeholder="Ej: Conferencia sobre IA Generativa" />
                                 </div>
                             </div>
-                        </div>
-                    ) : null
-                })()}
 
-                {/* Botones */}
-                <div className="flex flex-col md:flex-row gap-4 mt-8 pt-6 border-t border-gray-200">
-                    <button type="submit" className="bg-violet-600 w-full text-white p-3 rounded-lg font-black tracking-wide hover:bg-violet-700 transition shadow-md">
-                        {id ? 'Guardar Cambios' : 'Confirmar Reserva'}
-                    </button>
-                    <button type="button" onClick={() => navigate('/dashboard/reservas')}
-                        className="bg-gray-400 w-full text-white p-3 rounded-lg font-black tracking-wide hover:bg-gray-500 transition shadow-md">
-                        Cancelar
-                    </button>
+                            {/* Select Conferencista */}
+                            <div>
+                                <label className="fr-label accent">Conferencista Asignado *</label>
+                                <select name="conferencista" value={reserva.conferencista}
+                                    onChange={handleChange} className="fr-select">
+                                    <option value="">-- Seleccione un conferencista --</option>
+                                    {conferencistas.map(p => (
+                                        <option key={p._id} value={p._id}>
+                                            {p.nombre} {p.apellido} — {p.empresa}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Select Auditorio */}
+                            <div>
+                                <label className="fr-label accent">Auditorio Asignado *</label>
+                                <select name="auditorio" value={reserva.auditorio}
+                                    onChange={handleChange} className="fr-select">
+                                    <option value="">-- Seleccione un auditorio --</option>
+                                    {auditorios.map(a => (
+                                        <option key={a._id} value={a._id}>
+                                            {a.nombre} — {a.ubicacion} ({a.capacidad} pax)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Resumen visual */}
+                            {ponenteSeleccionado && salonSeleccionado && (
+                                <div className="fres-summary">
+                                    <p className="fres-summary-title">Resumen de la Reserva</p>
+                                    <div className="fres-summary-grid">
+                                        <div>
+                                            <p className="summary-item-label">Ponente</p>
+                                            <p className="summary-item-name">{ponenteSeleccionado.nombre} {ponenteSeleccionado.apellido}</p>
+                                            <p className="summary-item-sub">{ponenteSeleccionado.empresa}</p>
+                                        </div>
+                                        <div>
+                                            <p className="summary-item-label">Salón</p>
+                                            <p className="summary-item-name">{salonSeleccionado.nombre}</p>
+                                            <p className="summary-item-sub">{salonSeleccionado.ubicacion} · {salonSeleccionado.capacidad} pax</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+
+                        <div className="fres-footer">
+                            <button type="submit" className="fr-btn-submit">
+                                {id ? 'Guardar Cambios' : 'Confirmar Reserva'}
+                            </button>
+                            <button type="button" className="fr-btn-cancel"
+                                onClick={() => navigate('/dashboard/reservas')}>
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
-        </div>
+            </div>
+        </>
     )
 }
 

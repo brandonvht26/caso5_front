@@ -4,20 +4,11 @@ import clienteAxios from '../config/axios'
 import Swal from 'sweetalert2'
 
 const FormularioConferencista = () => {
-    // 1. Estado para los 10 campos requeridos por el modelo
     const [conferencista, setConferencista] = useState({
-        nombre: '',
-        apellido: '',
-        cedula: '',
-        genero: '',
-        ciudad: '',
-        direccion: '',
-        fecha_nacimiento: '',
-        telefono: '',
-        email: '',
-        empresa: ''
+        nombre: '', apellido: '', cedula: '', genero: '',
+        ciudad: '', direccion: '', fecha_nacimiento: '',
+        telefono: '', email: '', empresa: ''
     })
-
     const navigate = useNavigate()
     const { id } = useParams()
 
@@ -25,17 +16,11 @@ const FormularioConferencista = () => {
         if (id) {
             const obtenerConferencista = async () => {
                 try {
-                    const { data } = await clienteAxios.get(`/conferencista/${id}`) //
-                    
-                    // Formatear la fecha para que el input type="date" la reconozca
-                    const fechaFormat = data.fecha_nacimiento.includes('T') 
-                        ? data.fecha_nacimiento.split('T')[0] 
-                        : data.fecha_nacimiento;
-                        
-                    setConferencista({
-                        ...data,
-                        fecha_nacimiento: fechaFormat
-                    })
+                    const { data } = await clienteAxios.get(`/conferencista/${id}`)
+                    const fechaFormat = data.fecha_nacimiento?.includes('T')
+                        ? data.fecha_nacimiento.split('T')[0]
+                        : data.fecha_nacimiento
+                    setConferencista({ ...data, fecha_nacimiento: fechaFormat })
                 } catch (error) {
                     Swal.fire('Error', 'No se pudo cargar la información del ponente', 'error')
                     navigate('/dashboard/conferencistas')
@@ -45,136 +30,224 @@ const FormularioConferencista = () => {
         }
     }, [id])
 
-    const handleChange = (e) => {
-        setConferencista({
-            ...conferencista,
-            [e.target.name]: e.target.value
-        })
-    }
+    const handleChange = (e) => setConferencista({ ...conferencista, [e.target.name]: e.target.value })
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-
-        // Validación frontend replicando el controlador (los 10 campos obligatorios)
         if (Object.values(conferencista).includes('')) {
             Swal.fire('Atención', 'Todos los campos son obligatorios', 'warning')
             return
         }
-
         try {
             if (id) {
-                // Actualizar (PUT)
                 await clienteAxios.put(`/conferencista/${id}`, conferencista)
                 Swal.fire('¡Actualizado!', 'Datos del ponente actualizados', 'success')
             } else {
-                // Crear (POST)
                 await clienteAxios.post('/conferencistas', conferencista)
                 Swal.fire('¡Registrado!', 'El conferencista ha sido invitado formalmente', 'success')
             }
             navigate('/dashboard/conferencistas')
         } catch (error) {
-            // Manejamos el error si la cédula ya existe
             Swal.fire('Error', error.response?.data?.msg || 'Error en el servidor', 'error')
         }
     }
 
     return (
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-5xl mx-auto mt-5 border-t-8 border-violet-600">
-            <h1 className="text-3xl font-black text-gray-800 mb-6 border-b-2 border-gray-100 pb-4">
-                {id ? 'Editar Perfil del Ponente' : 'Registrar Nuevo Conferencista'}
-            </h1>
+        <>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+                .fconf-page { font-family: 'DM Sans', sans-serif; }
+                .fconf-card {
+                    background: #fff; border-radius: 20px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+                    max-width: 900px; margin: 0 auto; overflow: hidden;
+                }
+                .fconf-header {
+                    background: linear-gradient(135deg, #1C1410 0%, #2E2010 100%);
+                    padding: 1.75rem 2rem; border-bottom: 3px solid #F59E0B;
+                }
+                .fconf-header p {
+                    font-size: 0.7rem; font-weight: 700; letter-spacing: 2.5px;
+                    text-transform: uppercase; color: #F59E0B; margin-bottom: 0.3rem;
+                }
+                .fconf-header h1 {
+                    font-family: 'Playfair Display', serif;
+                    font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 700; color: #fff;
+                }
+                .fconf-body { padding: 2rem; display: flex; flex-direction: column; gap: 0; }
+                .fconf-section {
+                    padding-bottom: 1.5rem; margin-bottom: 1.5rem;
+                    border-bottom: 1px solid #F3F4F6;
+                }
+                .fconf-section:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+                .section-title {
+                    font-size: 0.68rem; font-weight: 700; letter-spacing: 2px;
+                    text-transform: uppercase; color: #EA580C; margin-bottom: 1rem;
+                }
+                .fconf-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.1rem; }
+                .fconf-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.1rem; }
+                .fc-label {
+                    display: block; font-size: 0.72rem; font-weight: 700;
+                    letter-spacing: 1.5px; text-transform: uppercase;
+                    color: #6B7280; margin-bottom: 0.4rem;
+                }
+                .fc-label.accent { color: #EA580C; }
+                .fc-input, .fc-select {
+                    width: 100%; padding: 0.8rem 1rem;
+                    border: 1.5px solid #E5E7EB; border-radius: 10px;
+                    background: #F9FAFB; color: #111827;
+                    font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+                    outline: none; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+                    box-sizing: border-box;
+                }
+                .fc-input:focus, .fc-select:focus {
+                    border-color: #F59E0B; background: #FFFBEB;
+                    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+                }
+                .fc-input:disabled { background: #F3F4F6; color: #9CA3AF; cursor: not-allowed; }
+                .fconf-footer {
+                    display: flex; gap: 1rem; flex-wrap: wrap;
+                    padding: 1.5rem 2rem; background: #F9FAFB; border-top: 1px solid #F3F4F6;
+                }
+                .fc-btn-submit {
+                    flex: 1; min-width: 160px; padding: 0.875rem 1rem;
+                    background: linear-gradient(135deg, #EA580C, #F59E0B);
+                    color: #1C1410; font-family: 'DM Sans', sans-serif;
+                    font-weight: 800; font-size: 0.9rem; border: none;
+                    border-radius: 10px; cursor: pointer;
+                    box-shadow: 0 4px 14px rgba(234,88,12,0.3);
+                    transition: transform 0.15s, box-shadow 0.15s;
+                }
+                .fc-btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(234,88,12,0.4); }
+                .fc-btn-cancel {
+                    flex: 1; min-width: 140px; padding: 0.875rem 1rem;
+                    background: #fff; color: #374151; font-family: 'DM Sans', sans-serif;
+                    font-weight: 700; font-size: 0.9rem; border: 1.5px solid #D1D5DB;
+                    border-radius: 10px; cursor: pointer; transition: background 0.15s;
+                }
+                .fc-btn-cancel:hover { background: #F3F4F6; }
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                
-                {/* Fila 1: Identificación Principal */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Cédula / Pasaporte *</label>
-                        <input type="text" name="cedula" value={conferencista.cedula} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" 
-                            placeholder="Ej: 1712345678" disabled={!!id} 
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Nombres *</label>
-                        <input type="text" name="nombre" value={conferencista.nombre} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Apellidos *</label>
-                        <input type="text" name="apellido" value={conferencista.apellido} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" />
-                    </div>
-                </div>
+                @media (max-width: 700px) { .fconf-grid-3 { grid-template-columns: 1fr; } }
+                @media (max-width: 560px) {
+                    .fconf-grid-2 { grid-template-columns: 1fr; }
+                    .fconf-body { padding: 1.25rem; }
+                    .fconf-footer { padding: 1.25rem; }
+                }
+            `}</style>
 
-                {/* Fila 2: Perfil Profesional y Demográfico */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label className="block text-violet-800 font-bold mb-2">Empresa / Institución *</label>
-                        <input type="text" name="empresa" value={conferencista.empresa} onChange={handleChange}
-                            className="w-full p-3 border border-violet-300 rounded-lg bg-violet-50 focus:ring-2 focus:ring-violet-500 outline-none font-semibold" 
-                            placeholder="Ej: Google, Universidad Central..." />
+            <div className="fconf-page">
+                <div className="fconf-card">
+                    <div className="fconf-header">
+                        <p>{id ? 'Edición' : 'Registro'} · Conferencistas</p>
+                        <h1>{id ? 'Editar Perfil del Ponente' : 'Registrar Nuevo Conferencista'}</h1>
                     </div>
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Fecha Nacimiento *</label>
-                        <input type="date" name="fecha_nacimiento" value={conferencista.fecha_nacimiento} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Género *</label>
-                        <select name="genero" value={conferencista.genero} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none">
-                            <option value="">-- Seleccione --</option>
-                            <option value="Masculino">Masculino</option>
-                            <option value="Femenino">Femenino</option>
-                            <option value="Otro">Otro</option>
-                        </select>
-                    </div>
-                </div>
 
-                {/* Fila 3: Contacto */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Correo Electrónico *</label>
-                        <input type="email" name="email" value={conferencista.email} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" 
-                            placeholder="ponente@empresa.com" />
-                    </div>
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Teléfono Móvil *</label>
-                        <input type="text" name="telefono" value={conferencista.telefono} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" 
-                            placeholder="Ej: +593 991234567" />
-                    </div>
-                </div>
+                    <form onSubmit={handleSubmit}>
+                        <div className="fconf-body">
 
-                {/* Fila 4: Ubicación */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Ciudad de Origen *</label>
-                        <input type="text" name="ciudad" value={conferencista.ciudad} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" 
-                            placeholder="Ej: Bogotá" />
-                    </div>
-                    <div>
-                        <label className="block text-gray-700 font-bold mb-2">Dirección *</label>
-                        <input type="text" name="direccion" value={conferencista.direccion} onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-violet-500 outline-none" />
-                    </div>
-                </div>
+                            {/* Identificación */}
+                            <div className="fconf-section">
+                                <p className="section-title">Identificación</p>
+                                <div className="fconf-grid-3">
+                                    <div>
+                                        <label className="fc-label">Cédula / Pasaporte *</label>
+                                        <input type="text" name="cedula" value={conferencista.cedula}
+                                            onChange={handleChange} className="fc-input"
+                                            placeholder="Ej: 1712345678" disabled={!!id} />
+                                    </div>
+                                    <div>
+                                        <label className="fc-label">Nombres *</label>
+                                        <input type="text" name="nombre" value={conferencista.nombre}
+                                            onChange={handleChange} className="fc-input" />
+                                    </div>
+                                    <div>
+                                        <label className="fc-label">Apellidos *</label>
+                                        <input type="text" name="apellido" value={conferencista.apellido}
+                                            onChange={handleChange} className="fc-input" />
+                                    </div>
+                                </div>
+                            </div>
 
-                {/* Botones */}
-                <div className="flex flex-col md:flex-row gap-4 mt-8 pt-6 border-t border-gray-200">
-                    <button type="submit" className="bg-violet-600 w-full md:w-auto px-12 text-white p-3 rounded-lg font-black tracking-wide hover:bg-violet-700 transition shadow-md">
-                        {id ? 'Guardar Cambios' : 'Registrar Conferencista'}
-                    </button>
-                    <button type="button" onClick={() => navigate('/dashboard/conferencistas')}
-                        className="bg-gray-400 w-full md:w-auto px-12 text-white p-3 rounded-lg font-black tracking-wide hover:bg-gray-500 transition shadow-md">
-                        Cancelar
-                    </button>
+                            {/* Perfil Profesional */}
+                            <div className="fconf-section">
+                                <p className="section-title">Perfil Profesional</p>
+                                <div className="fconf-grid-3">
+                                    <div>
+                                        <label className="fc-label accent">Empresa / Institución *</label>
+                                        <input type="text" name="empresa" value={conferencista.empresa}
+                                            onChange={handleChange} className="fc-input"
+                                            placeholder="Ej: Google, Universidad..." />
+                                    </div>
+                                    <div>
+                                        <label className="fc-label">Fecha de Nacimiento *</label>
+                                        <input type="date" name="fecha_nacimiento" value={conferencista.fecha_nacimiento}
+                                            onChange={handleChange} className="fc-input" />
+                                    </div>
+                                    <div>
+                                        <label className="fc-label">Género *</label>
+                                        <select name="genero" value={conferencista.genero}
+                                            onChange={handleChange} className="fc-select">
+                                            <option value="">-- Seleccione --</option>
+                                            <option value="Masculino">Masculino</option>
+                                            <option value="Femenino">Femenino</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Contacto */}
+                            <div className="fconf-section">
+                                <p className="section-title">Contacto</p>
+                                <div className="fconf-grid-2">
+                                    <div>
+                                        <label className="fc-label">Correo Electrónico *</label>
+                                        <input type="email" name="email" value={conferencista.email}
+                                            onChange={handleChange} className="fc-input"
+                                            placeholder="ponente@empresa.com" />
+                                    </div>
+                                    <div>
+                                        <label className="fc-label">Teléfono Móvil *</label>
+                                        <input type="text" name="telefono" value={conferencista.telefono}
+                                            onChange={handleChange} className="fc-input"
+                                            placeholder="Ej: +593 991234567" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Ubicación */}
+                            <div className="fconf-section">
+                                <p className="section-title">Ubicación</p>
+                                <div className="fconf-grid-2">
+                                    <div>
+                                        <label className="fc-label">Ciudad de Origen *</label>
+                                        <input type="text" name="ciudad" value={conferencista.ciudad}
+                                            onChange={handleChange} className="fc-input"
+                                            placeholder="Ej: Bogotá" />
+                                    </div>
+                                    <div>
+                                        <label className="fc-label">Dirección *</label>
+                                        <input type="text" name="direccion" value={conferencista.direccion}
+                                            onChange={handleChange} className="fc-input" />
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div className="fconf-footer">
+                            <button type="submit" className="fc-btn-submit">
+                                {id ? 'Guardar Cambios' : 'Registrar Conferencista'}
+                            </button>
+                            <button type="button" className="fc-btn-cancel"
+                                onClick={() => navigate('/dashboard/conferencistas')}>
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
-        </div>
+            </div>
+        </>
     )
 }
 
